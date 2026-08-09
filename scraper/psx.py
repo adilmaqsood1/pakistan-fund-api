@@ -64,13 +64,20 @@ async def fetch_psx_etf_price(symbol: str, client: Optional[httpx.AsyncClient] =
             stats_map = dict(zip(labels, values))
 
             # Extract NAV
-            nav_val = market_price
-            raw_nav = stats_map.get("NAV *") or stats_map.get("NAV")
-            if raw_nav and raw_nav != "N/A":
-                try:
-                    nav_val = float(raw_nav.replace("Rs.", "").replace(",", ""))
-                except ValueError:
-                    pass
+            nav_val = None
+            for k, v in stats_map.items():
+                if "nav" in k.lower() and v and v.strip() != "N/A":
+                    try:
+                        clean_nav = v.replace("Rs.", "").replace(",", "").strip()
+                        val = float(clean_nav)
+                        if val > 0:
+                            nav_val = val
+                            break
+                    except ValueError:
+                        pass
+
+            if nav_val is None:
+                nav_val = market_price
 
             # Extract Volume
             volume = 0
@@ -113,93 +120,111 @@ async def fetch_psx_etf_price(symbol: str, client: Optional[httpx.AsyncClient] =
 
     return None
 
+def fetch_single_etf_sync(symbol: str) -> Optional[Dict[str, Any]]:
+    today_str = date.today().strftime("%Y-%m-%d")
+    url = f"{PSX_DPS_BASE}/etf/{symbol}"
+    meta = ETF_METADATA.get(symbol, {"name": f"{symbol} ETF", "category": "equity"})
+
+    try:
+        with httpx.Client(headers=HEADERS, timeout=5.0, follow_redirects=True) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "lxml")
+                price_elem = soup.find("div", class_="quote__close") or soup.find("span", class_="quote__price")
+                market_price = None
+                if price_elem:
+                    raw_p = price_elem.text.strip().replace("Rs.", "").replace(",", "")
+                    try:
+                        market_price = float(raw_p)
+                    except ValueError:
+                        pass
+
+                labels = [div.text.strip() for div in soup.find_all("div", class_="stats_label")]
+                values = [div.text.strip() for div in soup.find_all("div", class_="stats_value")]
+                stats_map = dict(zip(labels, values))
+
+                nav_val = None
+                for k, v in stats_map.items():
+                    if "nav" in k.lower() and v and v.strip() != "N/A":
+                        try:
+                            clean_nav = v.replace("Rs.", "").replace(",", "").strip()
+                            val = float(clean_nav)
+                            if val > 0:
+                                nav_val = val
+                                break
+                        except ValueError:
+                            pass
+
+                if nav_val is None:
+                    nav_val = market_price
+
+                volume = 0
+                raw_vol = stats_map.get("Volume")
+                if raw_vol:
+                    try:
+                        volume = int(raw_vol.replace(",", ""))
+                    except ValueError:
+                        pass
+
+                aum_mn = 1000.0
+                raw_aum = stats_map.get("Fund Size / AUM (Rs) *") or stats_map.get("Market Cap (000's)")
+                if raw_aum and raw_aum != "N/A":
+                    clean_aum = raw_aum.replace("Rs.", "").replace(",", "").strip()
+                    try:
+                        val_rs = float(clean_aum)
+                        if "000's" in (stats_map.get("Market Cap (000's)", "")):
+                            val_rs *= 1000.0
+                        aum_mn = round(val_rs / 1_000_000.0, 2)
+                    except ValueError:
+                        pass
+
+                if market_price is not None:
+                    return {
+                        "date": today_str,
+                        "symbol": symbol,
+                        "name": meta["name"],
+                        "category": meta["category"],
+                        "market_price": market_price,
+                        "nav": nav_val,
+                        "volume": volume,
+                        "aum_mn_pkr": aum_mn,
+                    }
+    except Exception:
+        pass
+    return None
+
 def fetch_all_etf_prices_sync() -> List[Dict[str, Any]]:
     """
-    Synchronously scrapes live closing prices, NAVs, and volume for all 9 PSX ETFs,
+    Synchronously scrapes live closing prices, NAVs, and volume for all 9 PSX ETFs concurrently,
     falling back to baseline market prices if cloud server IPs are restricted.
     No async event loop required.
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     today_str = date.today().strftime("%Y-%m-%d")
     scraped = []
 
     try:
-        with httpx.Client(headers=HEADERS, timeout=10.0, follow_redirects=True) as client:
-            for symbol in ETF_SYMBOLS:
-                try:
-                    url = f"{PSX_DPS_BASE}/etf/{symbol}"
-                    meta = ETF_METADATA.get(symbol, {"name": f"{symbol} ETF", "category": "equity"})
-                    resp = client.get(url)
-                    if resp.status_code == 200:
-                        soup = BeautifulSoup(resp.text, "lxml")
-                        price_elem = soup.find("div", class_="quote__close") or soup.find("span", class_="quote__price")
-                        market_price = None
-                        if price_elem:
-                            raw_p = price_elem.text.strip().replace("Rs.", "").replace(",", "")
-                            try:
-                                market_price = float(raw_p)
-                            except ValueError:
-                                pass
-
-                        labels = [div.text.strip() for div in soup.find_all("div", class_="stats_label")]
-                        values = [div.text.strip() for div in soup.find_all("div", class_="stats_value")]
-                        stats_map = dict(zip(labels, values))
-
-                        nav_val = market_price
-                        raw_nav = stats_map.get("NAV *") or stats_map.get("NAV")
-                        if raw_nav and raw_nav != "N/A":
-                            try:
-                                nav_val = float(raw_nav.replace("Rs.", "").replace(",", ""))
-                            except ValueError:
-                                pass
-
-                        volume = 0
-                        raw_vol = stats_map.get("Volume")
-                        if raw_vol:
-                            try:
-                                volume = int(raw_vol.replace(",", ""))
-                            except ValueError:
-                                pass
-
-                        aum_mn = 1000.0
-                        raw_aum = stats_map.get("Fund Size / AUM (Rs) *") or stats_map.get("Market Cap (000's)")
-                        if raw_aum and raw_aum != "N/A":
-                            clean_aum = raw_aum.replace("Rs.", "").replace(",", "").strip()
-                            try:
-                                val_rs = float(clean_aum)
-                                if "000's" in (stats_map.get("Market Cap (000's)", "")):
-                                    val_rs *= 1000.0
-                                aum_mn = round(val_rs / 1_000_000.0, 2)
-                            except ValueError:
-                                pass
-
-                        if market_price is not None:
-                            scraped.append({
-                                "date": today_str,
-                                "symbol": symbol,
-                                "name": meta["name"],
-                                "category": meta["category"],
-                                "market_price": market_price,
-                                "nav": nav_val,
-                                "volume": volume,
-                                "aum_mn_pkr": aum_mn,
-                            })
-                except Exception:
-                    pass
+        with ThreadPoolExecutor(max_workers=9) as executor:
+            future_to_sym = {executor.submit(fetch_single_etf_sync, sym): sym for sym in ETF_SYMBOLS}
+            for future in as_completed(future_to_sym):
+                res = future.result()
+                if res:
+                    scraped.append(res)
     except Exception as e:
         logger.warning(f"Live PSX ETF sync fetch failed: {e}")
 
     scraped_map = {item["symbol"]: item for item in scraped}
 
     baseline_etfs = {
-        "HBLTETF": {"market_price": 10.50, "nav": 10.45, "aum_mn_pkr": 1250.0, "volume": 45000},
-        "MZNPETF": {"market_price": 11.20, "nav": 11.15, "aum_mn_pkr": 890.0, "volume": 32000},
-        "MIIETF": {"market_price": 10.80, "nav": 10.75, "aum_mn_pkr": 450.0, "volume": 18000},
-        "NBPGETF": {"market_price": 12.10, "nav": 12.00, "aum_mn_pkr": 620.0, "volume": 25000},
-        "NITGETF": {"market_price": 10.15, "nav": 10.10, "aum_mn_pkr": 780.0, "volume": 15000},
-        "UBLPETF": {"market_price": 14.50, "nav": 14.40, "aum_mn_pkr": 510.0, "volume": 21000},
-        "JSGBETF": {"market_price": 9.80, "nav": 9.75, "aum_mn_pkr": 320.0, "volume": 12000},
-        "ACIETF": {"market_price": 11.60, "nav": 11.50, "aum_mn_pkr": 410.0, "volume": 19000},
-        "JSMFETF": {"market_price": 13.20, "nav": 13.10, "aum_mn_pkr": 290.0, "volume": 14000},
+        "HBLTETF": {"market_price": 104.80, "nav": 104.68, "aum_mn_pkr": 523.4, "volume": 86},
+        "MZNPETF": {"market_price": 18.13, "nav": 18.14, "aum_mn_pkr": 2393.8, "volume": 705},
+        "MIIETF": {"market_price": 17.05, "nav": 17.02, "aum_mn_pkr": 1973.9, "volume": 364},
+        "NBPGETF": {"market_price": 27.74, "nav": 27.80, "aum_mn_pkr": 287.9, "volume": 0},
+        "NITGETF": {"market_price": 35.15, "nav": 35.10, "aum_mn_pkr": 234.5, "volume": 0},
+        "UBLPETF": {"market_price": 30.35, "nav": 30.25, "aum_mn_pkr": 760.8, "volume": 0},
+        "JSGBETF": {"market_price": 42.99, "nav": 42.85, "aum_mn_pkr": 390.0, "volume": 10},
+        "ACIETF": {"market_price": 17.56, "nav": 17.50, "aum_mn_pkr": 85.3, "volume": 0},
+        "JSMFETF": {"market_price": 10.20, "nav": 10.15, "aum_mn_pkr": 1397.2, "volume": 6},
     }
 
     final_list = []

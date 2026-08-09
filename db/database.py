@@ -9,7 +9,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./pakistan_funds.db")
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+    connect_args = {"check_same_thread": False, "timeout": 30}
 
 engine = create_engine(
     DATABASE_URL,
@@ -32,3 +32,9 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    if DATABASE_URL.startswith("sqlite"):
+        try:
+            with engine.connect() as conn:
+                conn.exec_driver_sql("PRAGMA journal_mode=WAL;")
+        except Exception:
+            pass

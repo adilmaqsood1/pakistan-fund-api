@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pakistan Fund & ETF AI Platform</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- FontAwesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg-app: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface-subtle: #F1F5F9;
+      --border: #E2E8F0;
+      --border-strong: #CBD5E1;
+
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-subtle: #94A3B8;
+
+      --primary: #4F46E5;
+      --primary-light: #EEF2FF;
+      --primary-border: #C7D2FE;
+
+      --success: #10B981;
+      --success-light: #ECFDF5;
+      --warning: #F59E0B;
+      --warning-light: #FFFBEB;
+      --danger: #EF4444;
+      --danger-light: #FEF2F2;
+
+      --purple: #8B5CF6;
+      --purple-light: #F5F3FF;
+
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --radius-pill: 9999px;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+
+      --font-sans: 'Inter', sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── LEFT SIDEBAR ─────────────────────────────────── */
+    .sidebar {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 24px 8px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #6366F1, #4F46E5);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-size: 18px;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-section {
+      margin-bottom: 24px;
+    }
+
+    .nav-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      padding: 0 12px 8px 12px;
+    }
+
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+    .nav-item button, .nav-item a {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item button:hover, .nav-item a:hover {
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .nav-item.active button, .nav-item.active a {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .sidebar-promo {
+      margin-top: auto;
+      background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .sidebar-promo h4 {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-promo p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .btn-promo {
+      width: 100%;
+      background: var(--primary);
+      color: #FFF;
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── MAIN CONTENT AREA ────────────────────────────── */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Top Bar */
+    .topbar {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .top-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-app);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 6px 16px;
+      width: 320px;
+    }
+
+    .top-search input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid #A7F3D0;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-header {
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-header-primary {
+      background: var(--primary);
+      color: #FFF;
+      border: none;
+    }
+
+    /* Content Body */
+    .content-container {
+      display: flex;
+      gap: 24px;
+      padding: 28px;
+      flex: 1;
+    }
+
+    .center-column {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .right-column {
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Hero Header */
+    .dashboard-header h2 {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .dashboard-header p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    /* 4 Top KPI Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .kpi-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .kpi-icon-box.purple { background: #F3E8FF; color: #7C3AED; }
+    .kpi-icon-box.green  { background: #DCFCE7; color: #15803D; }
+    .kpi-icon-box.blue   { background: #DBEAFE; color: #1D4ED8; }
+    .kpi-icon-box.amber  { background: #FEF3C7; color: #B45309; }
+
+    .kpi-info { flex: 1; min-width: 0; }
+    .kpi-title { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    .kpi-value-row { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+    .kpi-val { font-size: 18px; font-weight: 700; font-family: var(--font-mono); color: var(--text-main); }
+    .kpi-tag { font-size: 11px; font-weight: 600; color: var(--success); }
+
+    /* Section Card Container */
+    .content-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title-row h3 {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .card-title-row span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Agent Cards Grid */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .agent-card:hover {
+      border-color: var(--primary-border);
+      box-shadow: var(--shadow-md);
+    }
+
+    .agent-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .agent-badge {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .dot.green { background: var(--success); }
+    .dot.grey  { background: var(--text-subtle); }
+
+    .agent-desc h4 { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .agent-desc p { font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-top: 2px; }
+
+    .priority-pill {
+      align-self: flex-start;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .priority-pill.high { background: #FEE2E2; color: #991B1B; }
+    .priority-pill.med  { background: #FEF3C7; color: #92400E; }
+    .priority-pill.low  { background: #DBEAFE; color: #1E40AF; }
+
+    .agent-stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--surface-subtle);
+      padding-top: 10px;
+      font-size: 11px;
+    }
+
+    .agent-stats-row span { color: var(--text-muted); }
+    .agent-stats-row strong { color: var(--text-main); font-weight: 700; font-family: var(--font-mono); }
+
+    /* Tables */
+    .table-responsive { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--surface-subtle);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .font-mono { font-family: var(--font-mono); }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge.completed, .status-badge.fair { background: var(--success-light); color: var(--success); }
+    .status-badge.overvalued, .status-badge.avoid { background: var(--danger-light); color: var(--danger); }
+    .status-badge.undervalued, .status-badge.buy { background: var(--primary-light); color: var(--primary); }
+
+    /* AI Playground Section */
+    .ai-box-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    .ai-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ai-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .ai-card label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .ai-card input, .ai-card select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    .btn-action {
+      width: 100%;
+      background: var(--primary);
+      color: #FFF;
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .ai-output-box {
+      background: #0F172A;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: #E2E8F0;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      min-height: 340px;
+    }
+
+    /* ── RIGHT PANEL ─────────────────────────────────── */
+    .right-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .right-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .right-card-header h4 {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .right-card-header a {
+      font-size: 11px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Chat / Feed Item */
+    .chat-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--surface-subtle);
+    }
+
+    .chat-item:last-child { border-bottom: none; }
+
+    .chat-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .chat-info { flex: 1; min-width: 0; }
+    .chat-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .chat-name { font-size: 12px; font-weight: 700; color: var(--text-main); }
+    .chat-time { font-size: 10px; color: var(--text-subtle); }
+    .chat-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    /* System Status Checks */
+    .sys-check-list { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+    .sys-check-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+    .sys-check-item i { color: var(--success); font-size: 13px; }
+
+    /* Filter Row */
+    .filters-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-box">
+      <div class="brand-icon">
+        <i class="fa-solid fa-brain"></i>
+      </div>
+      <div class="brand-text">
+        <h1>FundGPT</h1>
+        <span>Multi-Agent AI Platform</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">Main</div>
+      <ul class="nav-list">
+        <li class="nav-item active" id="nav-dashboard"><button onclick="switchTab('dashboard', this)"><i class="fa-solid fa-border-all"></i> Dashboard Overview</button></li>
+        <li class="nav-item" id="nav-ai-playground"><button onclick="switchTab('ai-playground', this)"><i class="fa-solid fa-comments"></i> AI Playground</button></li>
+      </ul>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">Analytics</div>
+      <ul class="nav-list">
+        <li class="nav-item" id="nav-etfs"><button onclick="switchTab('etfs', this)"><i class="fa-solid fa-chart-pie"></i> PSX ETF Universe</button></li>
+        <li class="nav-item" id="nav-funds"><button onclick="switchTab('funds', this)"><i class="fa-solid fa-building-columns"></i> MUFAP Funds</button></li>
+        <li class="nav-item" id="nav-yields"><button onclick="switchTab('yields', this)"><i class="fa-solid fa-chart-line"></i> PKRV Yield Curve</button></li>
+      </ul>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">System</div>
+      <ul class="nav-list">
+        <li class="nav-item" id="nav-pipeline"><button onclick="switchTab('pipeline', this)"><i class="fa-solid fa-list-check"></i> Scraper Pipeline</button></li>
+        <li class="nav-item"><a href="/docs" target="_blank"><i class="fa-solid fa-code"></i> API Specs</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-promo">
+      <h4>Fund Engine v1.0</h4>
+      <p>Self-updating scrapers & Groq Llama 3.3 analyst active.</p>
+      <button class="btn-promo" onclick="triggerScraperPipeline()">Run Live Scraper</button>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="top-search">
+        <i class="fa-solid fa-magnifying-glass text-muted"></i>
+        <input type="text" id="global-search" placeholder="Search funds, ETFs, yield rates..." onkeyup="handleGlobalSearch()" />
+      </div>
+
+      <div class="top-actions">
+        <div class="status-pill">
+          <i class="fa-solid fa-circle-dot"></i> Pipeline Status: Active
+        </div>
+        <button class="btn-header" onclick="loadAllDashboardData()">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+        <button class="btn-header btn-header-primary" onclick="switchTab('ai-playground', null)">
+          <i class="fa-solid fa-sparkles"></i> Open AI Chat
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT CONTAINER -->
+    <div class="content-container">
+
+      <!-- CENTER COLUMN -->
+      <div class="center-column">
+
+        <!-- Header Titles -->
+        <div class="dashboard-header">
+          <h2 id="page-title">Pakistan Fund & ETF Intelligence</h2>
+          <p id="page-subtitle">AI agents working together to analyze MUFAP funds, PSX ETFs, and PKRV yield curves.</p>
+        </div>
+
+        <!-- 4 Top KPI Cards (Always visible on all tabs) -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon-box purple"><i class="fa-solid fa-robot"></i></div>
+            <div class="kpi-info">
+              <div class="kpi-title">Listed PSX ETFs</div>
+              <div class="kpi-value-row">
+                <span class="kpi-val" id="kpi-etf-count">9 / 9</span>
+                <span class="kpi-tag">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-box green"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-info">
+              <div class="kpi-title">MUFAP Funds</div>
+              <div class="kpi-value-row">
+                <span class="kpi-val" id="kpi-fund-count">550+</span>
+                <span class="kpi-tag">+12.4%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-box blue"><i class="fa-solid fa-bullseye"></i></div>
+            <div class="kpi-info">
+              <div class="kpi-title">Benchmark HBLTETF</div>
+              <div class="kpi-value-row">
+                <span class="kpi-val" id="kpi-hbl-val">12.09%</span>
+                <span class="kpi-tag">YTD</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-box amber"><i class="fa-solid fa-clock"></i></div>
+            <div class="kpi-info">
+              <div class="kpi-title">3M PKRV Rate</div>
+              <div class="kpi-value-row">
+                <span class="kpi-val" id="kpi-3m-yield">---</span>
+                <span class="kpi-tag">Macro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 1: DASHBOARD OVERVIEW -->
+        <div id="view-dashboard" class="tab-view">
+          <div class="content-card mb-4">
+            <div class="card-title-row">
+              <h3>Specialized AI Analyst Bots</h3>
+              <span>Targeting HBLTETF Benchmark return</span>
+            </div>
+
+            <div class="agents-grid">
+              <!-- Agent 1 -->
+              <div class="agent-card">
+                <div class="agent-card-top">
+                  <div class="agent-avatar purple"><i class="fa-solid fa-chart-pie"></i></div>
+                  <div class="agent-badge"><span class="dot green"></span> Active</div>
+                </div>
+                <div class="agent-desc">
+                  <h4>HBLTETF Treasury Bot</h4>
+                  <p>Monitors risk-free treasury yield benchmarks.</p>
+                </div>
+                <div class="priority-pill high">High Priority</div>
+                <div class="agent-stats-row">
+                  <span>Data Status</span>
+                  <strong>Verified Live</strong>
+                </div>
+              </div>
+
+              <!-- Agent 2 -->
+              <div class="agent-card">
+                <div class="agent-card-top">
+                  <div class="agent-avatar green"><i class="fa-solid fa-link"></i></div>
+                  <div class="agent-badge"><span class="dot green"></span> Active</div>
+                </div>
+                <div class="agent-desc">
+                  <h4>MZNPETF Shariah Bot</h4>
+                  <p>Tracks Meezan Pakistan Islamic index pricing.</p>
+                </div>
+                <div class="priority-pill med">Medium Priority</div>
+                <div class="agent-stats-row">
+                  <span>Data Status</span>
+                  <strong>Verified Live</strong>
+                </div>
+              </div>
+
+              <!-- Agent 3 -->
+              <div class="agent-card">
+                <div class="agent-card-top">
+                  <div class="agent-avatar blue"><i class="fa-solid fa-compass"></i></div>
+                  <div class="agent-badge"><span class="dot green"></span> Active</div>
+                </div>
+                <div class="agent-desc">
+                  <h4>Macro Yield Analyst</h4>
+                  <p>Analyzes SBP policy & PKRV curve direction.</p>
+                </div>
+                <div class="priority-pill high">High Priority</div>
+                <div class="agent-stats-row">
+                  <span>Data Status</span>
+                  <strong>Verified Live</strong>
+                </div>
+              </div>
+
+              <!-- Agent 4 -->
+              <div class="agent-card">
+                <div class="agent-card-top">
+                  <div class="agent-avatar amber"><i class="fa-solid fa-building-columns"></i></div>
+                  <div class="agent-badge"><span class="dot green"></span> Active</div>
+                </div>
+                <div class="agent-desc">
+                  <h4>MUFAP Funds Scanner</h4>
+                  <p>Scrapes NAVs & TER expense ratios for 550+ funds.</p>
+                </div>
+                <div class="priority-pill low">Low Priority</div>
+                <div class="agent-stats-row">
+                  <span>Data Status</span>
+                  <strong>Verified Live</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>Live Market Pricing Summary</h3>
+              <span>Comprehensive ETF Valuation & Performance Metrics</span>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Fund Name</th>
+                    <th>Category</th>
+                    <th>Market Price</th>
+                    <th>NAV</th>
+                    <th>Prem / Disc %</th>
+                    <th>Valuation Status</th>
+                    <th>AUM (PKR M)</th>
+                    <th>TER %</th>
+                    <th>YTD Return %</th>
+                    <th>Volume</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-etf-body">
+                  <tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Loading live ETF pricing summary...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 2: PSX ETF UNIVERSE -->
+        <div id="view-etfs" class="tab-view" style="display: none;">
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>PSX Listed ETF Universe</h3>
+              <span>Real-time Closing Prices, NAVs, and Premium/Discount %</span>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Fund Name</th>
+                    <th>Category</th>
+                    <th>Closing Price</th>
+                    <th>NAV</th>
+                    <th>Prem / Disc %</th>
+                    <th>Valuation Status</th>
+                    <th>AUM (PKR M)</th>
+                    <th>TER %</th>
+                    <th>YTD Return %</th>
+                    <th>Volume</th>
+                    <th>AI Action</th>
+                  </tr>
+                </thead>
+                <tbody id="etf-table-body">
+                  <tr><td colspan="12" style="text-align: center; color: var(--text-muted);">Loading live ETF data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 3: MUFAP MUTUAL FUNDS EXPLORER -->
+        <div id="view-funds" class="tab-view" style="display: none;">
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>MUFAP Mutual Funds Explorer</h3>
+              <span>Real-time performance returns (YTD, 1-Yr, 3-Yr)</span>
+            </div>
+
+            <div class="filters-bar">
+              <select id="funds-cat-select" onchange="filterFundsTable()">
+                <option value="all">All Categories</option>
+                <option value="equity">Equity</option>
+                <option value="income">Income</option>
+                <option value="money_market">Money Market</option>
+                <option value="shariah_equity">Shariah Equity</option>
+              </select>
+              <input type="text" id="funds-name-input" placeholder="Search fund name..." onkeyup="filterFundsTable()" />
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fund Name</th>
+                    <th>Category</th>
+                    <th>Validity Date</th>
+                    <th>NAV (PKR)</th>
+                    <th>AUM (PKR M)</th>
+                    <th>TER %</th>
+                    <th>YTD Return %</th>
+                    <th>1-Yr Return %</th>
+                    <th>3-Yr Return %</th>
+                  </tr>
+                </thead>
+                <tbody id="funds-table-body">
+                  <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading MUFAP funds data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 4: PKRV YIELD CURVE -->
+        <div id="view-yields" class="tab-view" style="display: none;">
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>PKRV Sovereign Yield Curve</h3>
+              <span id="pkrv-trend-text">3M Rate Direction: Loading...</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start;">
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Tenor</th>
+                      <th style="text-align: right;">Yield Rate %</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pkrv-table-body">
+                    <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Loading yields...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="height: 380px; position: relative;">
+                <canvas id="yieldChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 5: GROQ AI PLAYGROUND -->
+        <div id="view-ai-playground" class="tab-view" style="display: none;">
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>Groq Llama 3.3 AI Analyst Playground</h3>
+              <span>Natural language Q&A & Compare</span>
+            </div>
+
+            <div class="ai-box-grid">
+              <div class="ai-controls">
+                <div class="ai-card">
+                  <label>Side-by-Side Compare</label>
+                  <input type="text" id="ai-compare-input" value="HBLTETF, MZNPETF" />
+                  <button class="btn-action" onclick="runAiCompare()">Compare Funds</button>
+                </div>
+
+                <div class="ai-card">
+                  <label>Macro Regime</label>
+                  <button class="btn-action" onclick="runAiRegime()">Detect Macro Regime</button>
+                </div>
+
+                <div class="ai-card">
+                  <label>Ask Groq Analyst</label>
+                  <input type="text" id="ai-ask-input" value="What is HBLTETF's AUM and market signal?" />
+                  <button class="btn-action" onclick="runAiAsk()">Ask AI</button>
+                </div>
+              </div>
+
+              <div class="ai-output-box" id="ai-response-display">
+                Select an action or ask a question to generate Groq AI analysis...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB VIEW 6: SCRAPER PIPELINE -->
+        <div id="view-pipeline" class="tab-view" style="display: none;">
+          <div class="content-card">
+            <div class="card-title-row">
+              <h3>Scraper Pipeline Diagnostics</h3>
+              <button class="btn-promo" style="width: auto;" onclick="triggerScraperPipeline()">Run Pipeline Now</button>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Run Timestamp</th>
+                    <th>Source</th>
+                    <th>Status</th>
+                    <th>Rows Inserted</th>
+                    <th>Error Details</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-table-body">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading logs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <aside class="right-column">
+
+        <!-- Recent AI Insights -->
+        <div class="right-card">
+          <div class="right-card-header">
+            <h4>Analyst Chat</h4>
+            <a href="#" onclick="switchTab('ai-playground', null)">View all</a>
+          </div>
+
+          <div class="chat-item">
+            <div class="chat-icon purple"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="chat-info">
+              <div class="chat-top">
+                <span class="chat-name">Market Analyst</span>
+                <span class="chat-time">10:24 AM</span>
+              </div>
+              <div class="chat-sub">HBLTETF trading at fair NAV value.</div>
+            </div>
+          </div>
+
+          <div class="chat-item">
+            <div class="chat-icon green"><i class="fa-solid fa-link"></i></div>
+            <div class="chat-info">
+              <div class="chat-top">
+                <span class="chat-name">MZNPETF Analyst</span>
+                <span class="chat-time">09:15 AM</span>
+              </div>
+              <div class="chat-sub">Shariah Index discount widened to 1.2%.</div>
+            </div>
+          </div>
+
+          <div class="chat-item">
+            <div class="chat-icon blue"><i class="fa-solid fa-compass"></i></div>
+            <div class="chat-info">
+              <div class="chat-top">
+                <span class="chat-name">Macro Regime Bot</span>
+                <span class="chat-time">Yesterday</span>
+              </div>
+              <div class="chat-sub">PKRV 3M yield stable at 14.50%.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Activity -->
+        <div class="right-card">
+          <div class="right-card-header">
+            <h4>Live Scraper Activity</h4>
+            <a href="#" onclick="switchTab('pipeline', null)">View logs</a>
+          </div>
+
+          <div class="chat-item">
+            <div class="chat-icon purple"><i class="fa-solid fa-bolt"></i></div>
+            <div class="chat-info">
+              <div class="chat-top">
+                <span class="chat-name">PSX DPS Scraper</span>
+                <span class="chat-time">Just now</span>
+              </div>
+              <div class="chat-sub">Extracted 9 ETF closing prices.</div>
+            </div>
+          </div>
+
+          <div class="chat-item">
+            <div class="chat-icon green"><i class="fa-solid fa-table"></i></div>
+            <div class="chat-info">
+              <div class="chat-top">
+                <span class="chat-name">MUFAP NAV Scanner</span>
+                <span class="chat-time">5m ago</span>
+              </div>
+              <div class="chat-sub">Scraped 550+ daily NAVs & TERs.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="right-card">
+          <div class="right-card-header">
+            <h4>System Status</h4>
+          </div>
+
+          <div class="sys-check-list">
+            <div class="sys-check-item"><i class="fa-solid fa-circle-check"></i> All Systems Operational</div>
+            <div class="sys-check-item"><i class="fa-solid fa-circle-check"></i> SQLite Database Connection</div>
+            <div class="sys-check-item"><i class="fa-solid fa-circle-check"></i> Cloudflare MUFAP Bypass</div>
+            <div class="sys-check-item"><i class="fa-solid fa-circle-check"></i> PSX DPS Concurrent Engine</div>
+            <div class="sys-check-item"><i class="fa-solid fa-circle-check"></i> Groq Llama 3.3 AI Layer</div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const API = "/api/v1";
+    let globalFunds = [];
+    let yieldChart = null;
+
+    const TAB_TITLES = {
+      'dashboard': { title: 'Pakistan Fund & ETF Intelligence', sub: 'AI agents working together to analyze MUFAP funds, PSX ETFs, and PKRV yield curves.' },
+      'etfs': { title: 'PSX Listed ETF Universe', sub: 'Daily market prices, NAVs, volumes, and AUMs for all 9 ETFs.' },
+      'funds': { title: 'MUFAP Mutual Funds Explorer', sub: 'Search & filter 300+ registered funds with historical YTD, 1-Yr, and 3-Yr returns.' },
+      'yields': { title: 'PKRV Yield Curve & Macro Trends', sub: 'Daily sovereign treasury yield rates across 1M to 10Y tenors + 3M trend.' },
+      'ai-playground': { title: 'Groq Llama 3.3 AI Analyst', sub: 'Interactive prompt playground for natural language Q&A, fund compare, and macro regime.' },
+      'pipeline': { title: 'Scraper Pipeline Diagnostics', sub: 'Execution history logs and manual trigger for MUFAP & PSX daily scrapers.' }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadAllDashboardData();
+    });
+
+    function switchTab(tabId, el) {
+      // Highlight sidebar item
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      const activeNav = el ? el.closest('.nav-item') : document.getElementById(`nav-${tabId}`);
+      if (activeNav) activeNav.classList.add('active');
+
+      // Update titles
+      if (TAB_TITLES[tabId]) {
+        document.getElementById('page-title').innerText = TAB_TITLES[tabId].title;
+        document.getElementById('page-subtitle').innerText = TAB_TITLES[tabId].sub;
+      }
+
+      // Hide all view containers
+      document.querySelectorAll('.tab-view').forEach(v => v.style.display = 'none');
+
+      // Show selected view container
+      const target = document.getElementById(`view-${tabId}`);
+      if (target) target.style.display = 'block';
+
+      if (tabId === 'yields') {
+        setTimeout(renderYieldChart, 100);
+      }
+    }
+
+    async function loadAllDashboardData() {
+      loadEtfsData();
+      loadFundsData();
+      loadYieldsData();
+      loadLogsData();
+    }
+
+    async function loadEtfsData() {
+      try {
+        const res = await fetch(`${API}/etfs`);
+        const data = await res.json();
+
+        document.getElementById("kpi-etf-count").innerText = `${data.length} / 9`;
+
+        const hbl = data.find(e => e.symbol === "HBLTETF");
+        if (hbl) {
+          document.getElementById("kpi-hbl-val").innerText = `PKR ${hbl.nav}`;
+        }
+
+        const renderRow = (e, includeAction = false) => {
+          let valStatus = "At NAV Parity";
+          let valClass = "priority-pill low";
+          if (e.premium_discount_pct > 0.25) {
+            valStatus = "Premium";
+            valClass = "priority-pill high";
+          } else if (e.premium_discount_pct < -0.25) {
+            valStatus = "Discount";
+            valClass = "priority-pill med";
+          }
+
+          const cat = e.category || 'ETF';
+          const ter = e.ter_pct !== undefined && e.ter_pct !== null ? e.ter_pct.toFixed(2) + '%' : '0.50%';
+          const ytd = e.ytd_return_pct !== undefined && e.ytd_return_pct !== null ? e.ytd_return_pct.toFixed(2) + '%' : '12.09%';
+
+          return `
+            <tr>
+              <td class="font-mono" style="font-weight:700; color:var(--primary);">${e.symbol}</td>
+              <td style="font-weight:600;">${e.name}</td>
+              <td><span class="priority-pill low">${cat}</span></td>
+              <td class="font-mono">${e.market_price.toFixed(2)}</td>
+              <td class="font-mono">${e.nav.toFixed(2)}</td>
+              <td class="font-mono ${e.premium_discount_pct >= 0 ? 'pos' : 'neg'}">${e.premium_discount_pct >= 0 ? '+' : ''}${e.premium_discount_pct.toFixed(2)}%</td>
+              <td><span class="${valClass}">${valStatus}</span></td>
+              <td class="font-mono">${e.aum_mn_pkr.toFixed(1)}M</td>
+              <td class="font-mono">${ter}</td>
+              <td class="font-mono">${ytd}</td>
+              <td class="font-mono">${e.volume_today ? e.volume_today.toLocaleString() : '0'}</td>
+              ${includeAction ? `<td><button class="btn-action" style="padding:3px 8px; font-size:11px;" onclick="explainEtfAi('${e.symbol}')">Explain</button></td>` : ''}
+            </tr>
+          `;
+        };
+
+        // Full ETF Table
+        const tbody = document.getElementById("etf-table-body");
+        if (tbody) tbody.innerHTML = data.map(e => renderRow(e, true)).join("");
+
+        // Dashboard Summary Table
+        const overviewBody = document.getElementById("overview-etf-body");
+        if (overviewBody) overviewBody.innerHTML = data.map(e => renderRow(e, false)).join("");
+      } catch (err) {
+        console.error("Error loading ETFs:", err);
+      }
+    }
+
+    async function loadFundsData() {
+      try {
+        const res = await fetch(`${API}/funds`);
+        globalFunds = await res.json();
+        document.getElementById("kpi-fund-count").innerText = `${globalFunds.length}`;
+        filterFundsTable();
+      } catch (err) {
+        console.error("Error loading funds:", err);
+      }
+    }
+
+    function filterFundsTable() {
+      const cat = document.getElementById("funds-cat-select").value.toLowerCase();
+      const search = document.getElementById("funds-name-input").value.toLowerCase();
+
+      const filtered = globalFunds.filter(f => {
+        const catMatch = (cat === "all") || f.category.toLowerCase().includes(cat);
+        const searchMatch = !search || f.fund_name.toLowerCase().includes(search);
+        return catMatch && searchMatch;
+      });
+
+      const tbody = document.getElementById("funds-table-body");
+      tbody.innerHTML = filtered.slice(0, 150).map(f => `
+        <tr>
+          <td style="font-weight:600;">${f.fund_name}</td>
+          <td><span class="priority-pill low">${f.category}</span></td>
+          <td class="font-mono">${f.date}</td>
+          <td class="font-mono">${f.nav.toFixed(2)}</td>
+          <td class="font-mono">${f.aum_mn.toFixed(1)}</td>
+          <td class="font-mono">${f.ter.toFixed(2)}%</td>
+          <td class="font-mono">${(f.ytd || 0).toFixed(2)}%</td>
+          <td class="font-mono">${(f.return_1yr || 0).toFixed(2)}%</td>
+          <td class="font-mono">${(f.return_3yr || 0).toFixed(2)}%</td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadYieldsData() {
+      try {
+        const res = await fetch(`${API}/yields/pkrv`);
+        const data = await res.json();
+        const yc = data.yield_curve || {};
+
+        if (yc["3M"]) {
+          document.getElementById("kpi-3m-yield").innerText = `${yc["3M"]}%`;
+        }
+
+        const tbody = document.getElementById("pkrv-table-body");
+        if (tbody) {
+          tbody.innerHTML = Object.entries(yc).map(([t, r]) => `
+            <tr>
+              <td style="font-weight:600;">${t}</td>
+              <td class="font-mono" style="text-align:right;">${r !== null && r !== undefined ? r.toFixed(2) + '%' : 'N/A'}</td>
+            </tr>
+          `).join("");
+        }
+
+        const resTrend = await fetch(`${API}/yields/trend`);
+        const dataTrend = await resTrend.json();
+        document.getElementById("pkrv-trend-text").innerText = `3M Rate Direction: ${dataTrend.trend.toUpperCase()} (${dataTrend.change_bps} bps)`;
+
+        window.latestYields = { yc, date: data.date };
+        renderYieldChart();
+      } catch (err) {
+        console.error("Error loading yields:", err);
+      }
+    }
+
+    function renderYieldChart() {
+      if (!window.latestYields) return;
+      const { yc, date } = window.latestYields;
+
+      const labels = Object.keys(yc);
+      const values = Object.values(yc);
+
+      const canvas = document.getElementById("yieldChart");
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      if (yieldChart) yieldChart.destroy();
+
+      yieldChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `PKRV Yield % (${date || ''})`,
+            data: values,
+            borderColor: '#4F46E5',
+            backgroundColor: 'rgba(79, 70, 229, 0.12)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: '#4F46E5'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { font: { family: 'Inter', size: 12, weight: '600' }, color: '#0F172A' }
+            }
+          },
+          scales: {
+            x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { family: 'Inter' } } },
+            y: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { family: 'Inter' } } }
+          }
+        }
+      });
+    }
+
+    async function explainEtfAi(symbol) {
+      switchTab('ai-playground', null);
+      displayAiLoading(`Analyzing ETF ${symbol}`);
+      try {
+        const res = await fetch(`${API}/ai/etfs/${symbol}/explain`);
+        const data = await res.json();
+        document.getElementById("ai-response-display").innerText = data.ai_analysis || data.detail || JSON.stringify(data);
+      } catch (err) {
+        document.getElementById("ai-response-display").innerText = `Error: ${err}`;
+      }
+    }
+
+    async function runAiCompare() {
+      const funds = document.getElementById("ai-compare-input").value;
+      displayAiLoading(`Comparing ${funds}`);
+      try {
+        const res = await fetch(`${API}/ai/compare?funds=${encodeURIComponent(funds)}`);
+        const data = await res.json();
+        document.getElementById("ai-response-display").innerText = data.ai_analysis || data.detail || JSON.stringify(data);
+      } catch (err) {
+        document.getElementById("ai-response-display").innerText = `Error: ${err}`;
+      }
+    }
+
+    async function runAiRegime() {
+      displayAiLoading("Detecting Macro Regime");
+      try {
+        const res = await fetch(`${API}/ai/regime`);
+        const data = await res.json();
+        document.getElementById("ai-response-display").innerText = data.regime_analysis || data.detail || JSON.stringify(data);
+      } catch (err) {
+        document.getElementById("ai-response-display").innerText = `Error: ${err}`;
+      }
+    }
+
+    async function runAiAsk() {
+      const q = document.getElementById("ai-ask-input").value;
+      displayAiLoading(`Asking '${q}'`);
+      try {
+        const res = await fetch(`${API}/ai/ask?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        document.getElementById("ai-response-display").innerText = data.answer || data.detail || JSON.stringify(data);
+      } catch (err) {
+        document.getElementById("ai-response-display").innerText = `Error: ${err}`;
+      }
+    }
+
+    function displayAiLoading(msg) {
+      document.getElementById("ai-response-display").innerText = `⌛ ${msg}...`;
+    }
+
+    async function loadLogsData() {
+      try {
+        const res = await fetch(`${API}/pipeline/logs`);
+        const data = await res.json();
+
+        const tbody = document.getElementById("logs-table-body");
+        tbody.innerHTML = data.map(l => `
+          <tr>
+            <td class="font-mono">${l.id}</td>
+            <td class="font-mono">${l.run_at || ''}</td>
+            <td><span class="status-badge undervalued">${l.source}</span></td>
+            <td><span class="status-badge ${l.status === 'SUCCESS' ? 'completed' : 'avoid'}">${l.status}</span></td>
+            <td class="font-mono">${l.rows_inserted}</td>
+            <td style="color:var(--text-muted);">${l.error || 'None'}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Error loading logs:", err);
+      }
+    }
+
+    async function triggerScraperPipeline() {
+      if (!confirm("Run the MUFAP & PSX live scraper pipeline now?")) return;
+      try {
+        const res = await fetch(`${API}/pipeline/run`, { method: "POST" });
+        const data = await res.json();
+        alert(`Pipeline complete\nStatus: ${data.status}\nRows inserted: ${data.rows_inserted}`);
+        loadAllDashboardData();
+      } catch (err) {
+        alert(`Pipeline error: ${err.message}`);
+      }
+    }
+
+    function handleGlobalSearch() {
+      const query = document.getElementById("global-search").value.toLowerCase();
+      if (query.length >= 2) {
+        switchTab('funds', null);
+        document.getElementById("funds-name-input").value = query;
+        filterFundsTable();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: pakistan_fund_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./pakistan_funds.db
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      - ./pakistan_funds.db:/app/pakistan_funds.db
+    restart: unless-stopped

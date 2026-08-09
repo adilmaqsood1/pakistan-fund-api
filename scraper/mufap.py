@@ -231,12 +231,14 @@ def fetch_mufap_payouts_sync() -> List[Dict[str, Any]]:
 def fetch_pkrv_yields_sync() -> List[Dict[str, Any]]:
     """
     Scrapes live PKRV yield curve across tenors (1M, 3M, 6M, 1Y, 3Y, 5Y, 10Y) from SBP.
+    Uses Cloudscraper to bypass WAF / anti-bot 403 Forbidden responses.
     """
     results = []
     today_str = date.today().strftime("%Y-%m-%d")
 
     try:
-        resp = httpx.get("https://www.sbp.org.pk/ecodata/pkrv.asp", timeout=10.0, follow_redirects=True)
+        scraper = get_scraper()
+        resp = scraper.get("https://www.sbp.org.pk/ecodata/pkrv.asp")
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "lxml")
             yield_dict = {}
@@ -257,8 +259,8 @@ def fetch_pkrv_yields_sync() -> List[Dict[str, Any]]:
             for t in ["1M", "3M", "6M", "1Y", "3Y", "5Y", "10Y"]:
                 if t in yield_dict:
                     results.append({"date": today_str, "tenor": t, "yield_pct": yield_dict[t]})
-    except Exception as e:
-        logger.error(f"Error scraping SBP PKRV yields: {e}")
+    except BaseException as e:
+        logger.warning(f"Error scraping SBP PKRV yields: {e}")
 
     # Baseline fallback if live scraper returns fewer than 4 tenors
     if len(results) < 4:

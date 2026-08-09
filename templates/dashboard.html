@@ -621,15 +621,53 @@
     .sys-check-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
     .sys-check-item i { color: var(--success); font-size: 13px; }
 
-    /* Filter Row */
-    .filters-bar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
+    /* Modal pop animation */
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
 <body>
+
+  <!-- Gatekeeper Contact Form Modal Overlay -->
+  <div id="contact-modal-overlay" style="position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 20px;">
+    <div style="background: #ffffff; width: 100%; max-width: 460px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E2E8F0; overflow: hidden; animation: modalPop 0.3s ease-out;">
+      <div style="background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%); padding: 26px 28px; color: #ffffff; text-align: center;">
+        <div style="width: 52px; height: 52px; background: rgba(255, 255, 255, 0.15); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 22px;">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <h3 style="font-family: var(--font-heading); font-size: 21px; font-weight: 700; margin-bottom: 6px; color: #ffffff;">Welcome to FundGPT</h3>
+        <p style="font-size: 13px; opacity: 0.92; line-height: 1.4; margin: 0; color: #E0E7FF;">Please complete registration to unlock live Pakistan mutual fund NAVs, ETF spreads, and AI market signals.</p>
+      </div>
+      <form id="contact-gatekeeper-form" style="padding: 24px 28px;" onsubmit="handleContactSubmission(event)">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Full Name *</label>
+          <input type="text" id="gate-full-name" required placeholder="e.g. Adil Maqsood" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13.5px; font-family: var(--font-sans); outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4F46E5'" onblur="this.style.borderColor='#CBD5E1'" />
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Email Address *</label>
+          <input type="email" id="gate-email" required placeholder="name@company.com" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13.5px; font-family: var(--font-sans); outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4F46E5'" onblur="this.style.borderColor='#CBD5E1'" />
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Phone / WhatsApp *</label>
+          <input type="tel" id="gate-phone" required placeholder="+92 300 1234567" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13.5px; font-family: var(--font-sans); outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4F46E5'" onblur="this.style.borderColor='#CBD5E1'" />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Organization / Role</label>
+          <input type="text" id="gate-org" placeholder="e.g. Asset Manager / Individual Investor" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13.5px; font-family: var(--font-sans); outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4F46E5'" onblur="this.style.borderColor='#CBD5E1'" />
+        </div>
+        <div id="gate-error-alert" style="display: none; padding: 10px 14px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; border-radius: 8px; font-size: 13px; margin-bottom: 14px;"></div>
+        <button type="submit" id="gate-submit-btn" style="width: 100%; padding: 13px; background: #4F46E5; color: #ffffff; border: none; border-radius: 8px; font-size: 14.5px; font-weight: 600; font-family: var(--font-sans); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s;">
+          <span>Unlock Platform Access</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <p style="text-align: center; font-size: 11.5px; color: #94A3B8; margin-top: 12px; margin-bottom: 0;">
+          <i class="fa-solid fa-shield-halved"></i> Registration session remains active for 24 hours.
+        </p>
+      </form>
+    </div>
+  </div>
 
   <!-- LEFT SIDEBAR -->
   <aside class="sidebar">
@@ -1147,7 +1185,78 @@
       'pipeline': { title: 'Scraper Pipeline Diagnostics', sub: 'Execution history logs and manual trigger for MUFAP & PSX daily scrapers.' }
     };
 
+    const GATE_KEY = "fundgpt_user_access_timestamp_v1";
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+    function checkGatekeeperAccess() {
+      const overlay = document.getElementById("contact-modal-overlay");
+      const lastAccess = localStorage.getItem(GATE_KEY);
+      const now = Date.now();
+
+      if (lastAccess && (now - parseInt(lastAccess, 10)) < ONE_DAY_MS) {
+        overlay.style.display = "none";
+      } else {
+        overlay.style.display = "flex";
+      }
+    }
+
+    async function handleContactSubmission(e) {
+      e.preventDefault();
+      const btn = document.getElementById("gate-submit-btn");
+      const errBox = document.getElementById("gate-error-alert");
+      errBox.style.display = "none";
+
+      const fullName = document.getElementById("gate-full-name").value.trim();
+      const email = document.getElementById("gate-email").value.trim();
+      const phone = document.getElementById("gate-phone").value.trim();
+      const org = document.getElementById("gate-org").value.trim() || "Individual Investor";
+
+      if (!fullName || !email || !phone) {
+        errBox.innerText = "Please fill in all required fields.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Verifying Access...</span>`;
+
+      try {
+        const res = await fetch(`${API}/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: fullName,
+            email: email,
+            phone: phone,
+            organization: org
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === "success") {
+          localStorage.setItem(GATE_KEY, Date.now().toString());
+          const overlay = document.getElementById("contact-modal-overlay");
+          overlay.style.transition = "opacity 0.3s ease";
+          overlay.style.opacity = "0";
+          setTimeout(() => {
+            overlay.style.display = "none";
+            overlay.style.opacity = "1";
+          }, 300);
+        } else {
+          errBox.innerText = data.detail || "Submission failed. Please try again.";
+          errBox.style.display = "block";
+          btn.disabled = false;
+          btn.innerHTML = `<span>Unlock Platform Access</span> <i class="fa-solid fa-arrow-right"></i>`;
+        }
+      } catch (err) {
+        console.error("Submission error:", err);
+        localStorage.setItem(GATE_KEY, Date.now().toString());
+        document.getElementById("contact-modal-overlay").style.display = "none";
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
+      checkGatekeeperAccess();
       loadAllDashboardData();
     });
 

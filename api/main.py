@@ -8,7 +8,7 @@ from db.database import init_db, SessionLocal
 from db.seed_data import seed_database_if_empty
 from scraper.scheduler import start_scheduler, stop_scheduler
 
-from api.routes import funds, etfs, yields, ai, pipeline
+from api.routes import funds, etfs, yields, ai, pipeline, contact
 
 # Configure logger
 logging.basicConfig(
@@ -96,5 +96,6 @@ v1_router.include_router(etfs.router)
 v1_router.include_router(yields.router)
 v1_router.include_router(ai.router)
 v1_router.include_router(pipeline.router)
+v1_router.include_router(contact.router)
 
 app.include_router(v1_router)

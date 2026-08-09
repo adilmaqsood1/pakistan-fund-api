@@ -148,3 +148,18 @@ async def test_pipeline_endpoints():
         resp = await client.get("/api/v1/pipeline/logs")
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
+
+@pytest.mark.asyncio
+async def test_contact_endpoint():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        payload = {
+            "full_name": "Test User",
+            "email": "test@example.com",
+            "phone": "+923001234567",
+            "organization": "Test Corp"
+        }
+        resp = await client.post("/api/v1/contact", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert "message" in data

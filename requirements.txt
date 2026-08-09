@@ -13,3 +13,4 @@ python-dotenv>=1.0.0
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 cloudscraper>=1.2.71
+email-validator>=2.0.0

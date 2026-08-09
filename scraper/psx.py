@@ -113,21 +113,80 @@ async def fetch_psx_etf_price(symbol: str, client: Optional[httpx.AsyncClient] =
 
     return None
 
-async def fetch_all_etf_prices() -> List[Dict[str, Any]]:
+def fetch_all_etf_prices_sync() -> List[Dict[str, Any]]:
     """
-    Scrapes live closing prices, NAVs, and volume for all 9 PSX ETFs concurrently,
+    Synchronously scrapes live closing prices, NAVs, and volume for all 9 PSX ETFs,
     falling back to baseline market prices if cloud server IPs are restricted.
+    No async event loop required.
     """
     today_str = date.today().strftime("%Y-%m-%d")
     scraped = []
 
     try:
-        async with httpx.AsyncClient(headers=HEADERS, timeout=15.0, follow_redirects=True) as client:
-            tasks = [fetch_psx_etf_price(symbol, client=client) for symbol in ETF_SYMBOLS]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            scraped = [r for r in results if isinstance(r, dict) and r is not None]
+        with httpx.Client(headers=HEADERS, timeout=10.0, follow_redirects=True) as client:
+            for symbol in ETF_SYMBOLS:
+                try:
+                    url = f"{PSX_DPS_BASE}/etf/{symbol}"
+                    meta = ETF_METADATA.get(symbol, {"name": f"{symbol} ETF", "category": "equity"})
+                    resp = client.get(url)
+                    if resp.status_code == 200:
+                        soup = BeautifulSoup(resp.text, "lxml")
+                        price_elem = soup.find("div", class_="quote__close") or soup.find("span", class_="quote__price")
+                        market_price = None
+                        if price_elem:
+                            raw_p = price_elem.text.strip().replace("Rs.", "").replace(",", "")
+                            try:
+                                market_price = float(raw_p)
+                            except ValueError:
+                                pass
+
+                        labels = [div.text.strip() for div in soup.find_all("div", class_="stats_label")]
+                        values = [div.text.strip() for div in soup.find_all("div", class_="stats_value")]
+                        stats_map = dict(zip(labels, values))
+
+                        nav_val = market_price
+                        raw_nav = stats_map.get("NAV *") or stats_map.get("NAV")
+                        if raw_nav and raw_nav != "N/A":
+                            try:
+                                nav_val = float(raw_nav.replace("Rs.", "").replace(",", ""))
+                            except ValueError:
+                                pass
+
+                        volume = 0
+                        raw_vol = stats_map.get("Volume")
+                        if raw_vol:
+                            try:
+                                volume = int(raw_vol.replace(",", ""))
+                            except ValueError:
+                                pass
+
+                        aum_mn = 1000.0
+                        raw_aum = stats_map.get("Fund Size / AUM (Rs) *") or stats_map.get("Market Cap (000's)")
+                        if raw_aum and raw_aum != "N/A":
+                            clean_aum = raw_aum.replace("Rs.", "").replace(",", "").strip()
+                            try:
+                                val_rs = float(clean_aum)
+                                if "000's" in (stats_map.get("Market Cap (000's)", "")):
+                                    val_rs *= 1000.0
+                                aum_mn = round(val_rs / 1_000_000.0, 2)
+                            except ValueError:
+                                pass
+
+                        if market_price is not None:
+                            scraped.append({
+                                "date": today_str,
+                                "symbol": symbol,
+                                "name": meta["name"],
+                                "category": meta["category"],
+                                "market_price": market_price,
+                                "nav": nav_val,
+                                "volume": volume,
+                                "aum_mn_pkr": aum_mn,
+                            })
+                except Exception:
+                    pass
     except Exception as e:
-        logger.warning(f"Live PSX ETF fetch failed: {e}")
+        logger.warning(f"Live PSX ETF sync fetch failed: {e}")
 
     scraped_map = {item["symbol"]: item for item in scraped}
 
@@ -162,3 +221,6 @@ async def fetch_all_etf_prices() -> List[Dict[str, Any]]:
             })
 
     return final_list
+
+async def fetch_all_etf_prices() -> List[Dict[str, Any]]:
+    return await asyncio.to_thread(fetch_all_etf_prices_sync)

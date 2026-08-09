@@ -10,7 +10,7 @@ from scraper.mufap import (
     fetch_mufap_payouts_sync,
     fetch_pkrv_yields_sync,
 )
-from scraper.psx import fetch_all_etf_prices
+from scraper.psx import fetch_all_etf_prices_sync
 
 logger = logging.getLogger("seed_data")
 
@@ -86,16 +86,7 @@ def seed_database_if_empty(db: Session):
         logger.info(f"Scraped and inserted {len(payout_objects)} real payout records from MUFAP.")
 
     # 4. Scrape real live PSX ETF prices
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    if loop.is_running():
-        etf_list = asyncio.run_coroutine_threadsafe(fetch_all_etf_prices(), loop).result()
-    else:
-        etf_list = loop.run_until_complete(fetch_all_etf_prices())
+    etf_list = fetch_all_etf_prices_sync()
 
     etf_objects = []
     today_str = date.today().strftime("%Y-%m-%d")

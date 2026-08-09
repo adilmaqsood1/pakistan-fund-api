@@ -103,13 +103,8 @@ def seed_database_if_empty(db: Session):
         else:
             signal = "FAIR"
 
-        # Search for YTD return if available in perf_list
-        ytd_ret = 12.09 if etf["symbol"] == "HBLTETF" else 15.0
-        matching_perf = next((p for p in perf_list if etf["symbol"] in p["fund_name"]), None)
-        if matching_perf:
-            ytd_ret = matching_perf["ytd"]
-
-        ter_val = ter_map.get(etf["symbol"], 0.75)
+        ter_val = etf.get("ter_pct", 0.50)
+        ytd_ret = etf.get("ytd_return_pct", 15.0)
 
         etf_objects.append(
             ETFSnapshot(

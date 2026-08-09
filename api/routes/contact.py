@@ -42,6 +42,7 @@ def send_email_via_brevo(submission: ContactSubmission, client_ip: str) -> bool:
     smtp_port = int(os.getenv("SMTP_PORT", os.getenv("Port", "587")))
     smtp_login = os.getenv("SMTP_LOGIN", os.getenv("Login", "9462f9001@smtp-brevo.com")).strip()
     smtp_password = os.getenv("SMTP_PASSWORD", os.getenv("api_key", "xsmtpsib-08d04e4512cc1a50dc85fd8d94f82f8782c33b2428d3f58ddbb33087b8227bba-IYTyVN7gdZr1jAF5")).strip()
+    brevo_api_key = os.getenv("BREVO_API_KEY", "").strip()
     recipient = os.getenv("CONTACT_RECIPIENT_EMAIL", "adilmaqsood501@gmail.com").strip()
 
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -86,7 +87,32 @@ def send_email_via_brevo(submission: ContactSubmission, client_ip: str) -> bool:
     </html>
     """
 
-    # 1. Try standard SMTP via Brevo
+    # 1. If Brevo API Key (xkeysib-...) is provided, use HTTP API first
+    api_key_to_use = brevo_api_key or (smtp_password if smtp_password.startswith("xkeysib-") else "")
+    if api_key_to_use:
+        try:
+            headers = {
+                "accept": "application/json",
+                "api-key": api_key_to_use,
+                "content-type": "application/json"
+            }
+            payload = {
+                "sender": {"name": "FundGPT Gateway", "email": smtp_login if "@" in smtp_login else "noreply@fundgpt.com"},
+                "to": [{"email": recipient, "name": "Adil Maqsood"}],
+                "subject": subject,
+                "htmlContent": html_content
+            }
+            with httpx.Client(timeout=5.0) as client:
+                resp = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
+                if resp.status_code in [200, 201, 202]:
+                    logger.info(f"Successfully sent contact email to {recipient} via Brevo HTTP API v3")
+                    return True
+                else:
+                    logger.warning(f"Brevo HTTP API v3 returned status {resp.status_code}: {resp.text}")
+        except Exception as e_api:
+            logger.warning(f"Brevo HTTP API delivery attempt failed: {e_api}")
+
+    # 2. Try standard SMTP via configured host/port
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -94,37 +120,25 @@ def send_email_via_brevo(submission: ContactSubmission, client_ip: str) -> bool:
         msg["To"] = recipient
         msg.attach(MIMEText(html_content, "html"))
 
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=5.0) as server:
-            server.starttls()
-            server.login(smtp_login, smtp_password)
-            server.sendmail(smtp_login, [recipient], msg.as_string())
-        logger.info(f"Successfully sent contact email to {recipient} via SMTP port {smtp_port}")
-        return True
-    except Exception as e1:
-        logger.warning(f"SMTP port {smtp_port} failed: {e1}. Attempting Brevo REST API fallback...")
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=5.0) as server:
+                server.login(smtp_login, smtp_password)
+                server.sendmail(smtp_login, [recipient], msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=5.0) as server:
+                server.starttls()
+                server.login(smtp_login, smtp_password)
+                server.sendmail(smtp_login, [recipient], msg.as_string())
 
-    # 2. Fallback to Brevo REST API
-    try:
-        headers = {
-            "accept": "application/json",
-            "api-key": smtp_password,
-            "content-type": "application/json"
-        }
-        payload = {
-            "sender": {"name": "FundGPT Gateway", "email": smtp_login},
-            "to": [{"email": recipient, "name": "Adil Maqsood"}],
-            "subject": subject,
-            "htmlContent": html_content
-        }
-        with httpx.Client(timeout=5.0) as client:
-            resp = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
-            if resp.status_code in [200, 201, 202]:
-                logger.info(f"Successfully sent contact email to {recipient} via Brevo REST API")
-                return True
-            else:
-                logger.warning(f"Brevo REST API returned status {resp.status_code}: {resp.text}")
-    except Exception as e2:
-        logger.warning(f"Brevo REST API delivery attempt failed: {e2}")
+        logger.info(f"Successfully sent contact email to {recipient} via SMTP {smtp_server}:{smtp_port}")
+        return True
+    except smtplib.SMTPResponseException as e_smtp:
+        if "Unauthorized IP address" in str(e_smtp) or e_smtp.smtp_code == 525:
+            logger.error("Brevo SMTP IP Restriction: Please allow server IP or clear Authorized IP restriction in Brevo Dashboard (https://app.brevo.com/settings/keys/smtp) or set BREVO_API_KEY (xkeysib-...).")
+        else:
+            logger.warning(f"SMTP error {e_smtp.smtp_code}: {e_smtp.smtp_error}")
+    except Exception as e1:
+        logger.warning(f"SMTP {smtp_server}:{smtp_port} failed: {e1}")
 
     return False
 

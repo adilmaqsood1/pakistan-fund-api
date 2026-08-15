@@ -9,13 +9,14 @@ load_dotenv()
 logger = logging.getLogger("groq_client")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL = "llama-3.3-70b-versatile"
 
 async def ask_groq(system: str, user: str, temperature: float = 0.3) -> str:
     """
-    Executes real LLM completion request to Groq API using llama-3.3-70b-versatile.
+    Executes real LLM completion request to Groq API using configured GROQ_MODEL (default: qwen-2.5-32b).
     """
+    load_dotenv(override=True)
     key = os.getenv("GROQ_API_KEY")
+    model = "qwen-2.5-32b"
     
     if not key or key.startswith("gsk_xxx") or len(key) < 10:
         raise HTTPException(
@@ -29,7 +30,7 @@ async def ask_groq(system: str, user: str, temperature: float = 0.3) -> str:
                 GROQ_URL,
                 headers={"Authorization": f"Bearer {key}"},
                 json={
-                    "model": MODEL,
+                    "model": model,
                     "messages": [
                         {"role": "system", "content": system},
                         {"role": "user", "content": user}
